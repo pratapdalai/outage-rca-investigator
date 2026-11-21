@@ -1,0 +1,24 @@
+{
+  "name": "outage-rca-investigator",
+  "version": "1.0.0",
+  "description": "Forge app for Jira: finds the network change that caused a telecom outage (Rovo agent, MCP tools, Teamwork Graph).",
+  "main": "src/index.js",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/correlate.test.js && npm run test:integration",
+    "test:integration": "esbuild test/integration.entry.js --bundle --platform=node --format=esm --outfile=test/.integration.mjs --alias:@forge/api=./test/mocks/forge-api.js --alias:@forge/resolver=./test/mocks/forge-resolver.js --log-level=warning && node test/.integration.mjs",
+    "lint": "forge lint"
+  },
+  "devDependencies": {
+    "@forge/cli": "^15.1.0",
+    "esbuild": "^0.24.0"
+  },
+  "dependencies": {
+    "@forge/api": "^8.5.0",
+    "@forge/bridge": "^7.3.0",
+    "@forge/react": "^12.5.0",
+    "@forge/resolver": "^2.0.2",
+    "react": "^18.3.1"
+  }
+}

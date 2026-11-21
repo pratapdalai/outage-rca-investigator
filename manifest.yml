@@ -1,0 +1,190 @@
+modules:
+  rovo:agent:
+    - key: outage-rca-agent
+      name: Outage RCA Investigator
+      description: Finds the network change that caused an outage, sizes the customer
+        impact, names the owner and drafts the RCA report.
+      icon: resource:static-assets;icon.png
+      prompt: resource:agent-prompt;agent-prompt.md
+      conversationStarters:
+        - Which change caused this outage?
+        - How many customers did this change affect?
+        - Who owns the suspect change and how do we roll it back?
+        - Draft the RCA report for this outage
+      followUpPrompt: Suggest one short next step for the NOC engineer, such as
+        checking the blast radius, finding the owner, building the timeline or
+        drafting the RCA.
+      actions:
+        - find-root-cause-changes
+        - get-outage-blast-radius
+        - get-change-context
+        - build-outage-timeline
+        - link-root-cause-change
+      skills:
+        - telecom-rca-playbook
+
+  rovo:skill:
+    - key: telecom-rca-playbook
+      source:
+        dir: skills/telecom-rca-playbook
+      dependencies:
+        tools:
+          - find-root-cause-changes
+          - get-outage-blast-radius
+          - get-change-context
+          - build-outage-timeline
+
+  rovo:mcp:
+    - key: outage-rca-mcp
+      name: Outage RCA Tools
+      tools:
+        - find-root-cause-changes
+        - get-outage-blast-radius
+        - get-change-context
+        - build-outage-timeline
+
+  action:
+    - key: find-root-cause-changes
+      name: Find root-cause changes
+      function: find-root-cause-fn
+      actionVerb: GET
+      description: Rank recent network changes by how likely they caused a given
+        outage ticket, with a 0-100 score, confidence, evidence, related outages
+        and rollback plan.
+      inputs:
+        issueKey:
+          title: Outage issue key
+          type: string
+          required: false
+          description: Key of the outage or incident ticket, for example NOC-42. Defaults
+            to the issue the user is viewing.
+        windowHours:
+          title: Lookback window (hours)
+          type: integer
+          required: false
+          description: How many hours before the outage to look for changes. Default 72,
+            maximum 720.
+    - key: get-outage-blast-radius
+      name: Get outage blast radius
+      function: get-blast-radius-fn
+      actionVerb: GET
+      description: For a change record, list every outage ticket on the same network
+        elements, firmware or site after the change, with total customers
+        affected.
+      inputs:
+        changeKey:
+          title: Change issue key
+          type: string
+          required: false
+          description: Key of the change record, for example NOC-7. Defaults to the issue
+            the user is viewing.
+        windowHours:
+          title: Window (hours)
+          type: integer
+          required: false
+          description: How many hours after the change to look for outages. Default 72.
+    - key: get-change-context
+      name: Get change owner and rollback
+      function: get-change-context-fn
+      actionVerb: GET
+      description: Get a change record's implementer, owning teams from Teamwork
+        Graph, recent discussion, affected network elements and rollback plan.
+      inputs:
+        changeKey:
+          title: Change issue key
+          type: string
+          required: false
+          description: Key of the change record, for example NOC-7. Defaults to the issue
+            the user is viewing.
+    - key: build-outage-timeline
+      name: Build outage timeline
+      function: get-timeline-fn
+      actionVerb: GET
+      description: Build a chronological timeline of network changes and outage
+        tickets around an outage, marking which events share network elements
+        with it.
+      inputs:
+        issueKey:
+          title: Outage issue key
+          type: string
+          required: false
+          description: Key of the outage ticket. Defaults to the issue the user is viewing.
+        windowHours:
+          title: Lookback window (hours)
+          type: integer
+          required: false
+          description: Hours before the outage to include. Default 72.
+    - key: link-root-cause-change
+      name: Link root-cause change
+      function: link-root-cause-fn
+      actionVerb: UPDATE
+      description: After the user confirms it, link a change record to an outage
+        ticket as its root cause and post the evidence as a comment. Only call
+        when the user explicitly confirms the change.
+      inputs:
+        incidentKey:
+          title: Outage issue key
+          type: string
+          required: false
+          description: Key of the outage ticket. Defaults to the issue the user is viewing.
+        changeKey:
+          title: Root-cause change key
+          type: string
+          required: true
+          description: Key of the change record the user confirmed as the root cause.
+
+  jira:issuePanel:
+    - key: outage-rca-panel
+      resource: panel
+      resolver:
+        function: resolver
+      render: native
+      title: Outage root cause
+      icon: resource:static-assets;icon.png
+
+  jira:projectPage:
+    - key: outage-rca-project-page
+      resource: project-page
+      resolver:
+        function: resolver
+      render: native
+      title: Outage RCA
+
+  function:
+    - key: find-root-cause-fn
+      handler: index.findRootCause
+    - key: get-blast-radius-fn
+      handler: index.getBlastRadius
+    - key: get-change-context-fn
+      handler: index.getChangeContext
+    - key: get-timeline-fn
+      handler: index.getTimeline
+    - key: link-root-cause-fn
+      handler: index.linkRootCause
+    - key: resolver
+      handler: index.resolverHandler
+
+resources:
+  - key: panel
+    path: src/frontend/panel.jsx
+  - key: project-page
+    path: src/frontend/project.jsx
+  - key: agent-prompt
+    path: prompts
+  - key: static-assets
+    path: static
+
+permissions:
+  scopes:
+    - read:jira-work
+    - write:jira-work
+    - read:jira-user
+    - read:graph:issue:jira
+    - read:graph:issue-comment:jira
+    - read:graph:user:atlassian
+    - read:graph:team:atlassian
+
+app:
+  runtime:
+    name: nodejs22.x
+  id: ari:cloud:ecosystem::app/33a538da-1b01-4f7c-aa1f-fe44e71ff234
