@@ -71,6 +71,13 @@ assert.equal(r.ok, true, JSON.stringify(r)); assert.equal(state.links.length, 1)
 const c = JSON.stringify(state.comments[0].body); assert.match(c, /Evidence/); assert.match(c, /Rollback plan/);
 log('✓ linked + commented:', r.data.message);
 
+// 8b. Confirming the same change again (double click / agent asked twice) adds no duplicate link or comment
+r = await resolve('linkCause', { changeKey: C1 }, { issue: { key: main } });
+assert.equal(r.ok, true); assert.equal(r.data.alreadyLinked, true);
+assert.equal(state.links.length, 1); assert.equal(state.comments.length, 1);
+a = await app.linkRootCause({ incidentKey: main, changeKey: C1, context: {} });
+assert.equal(a.alreadyLinked, true); assert.equal(state.links.length, 1); log('✓ second confirmation is a no-op:', r.data.message);
+
 // 9. Panel opened on a change record shows blast radius
 r = await resolve('analyse', {}, { issue: { key: C1 } });
 assert.equal(r.data.outagesAfterChange, 4); log('✓ panel on a change record');

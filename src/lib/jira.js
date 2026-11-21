@@ -74,6 +74,12 @@ export async function addComment(key, adfBody) {
   return call(route`/rest/api/3/issue/${key}/comment`, { method: 'POST', body: { body: adfBody } });
 }
 
+/** Keys of all issues linked to `key` (either direction, any link type). */
+export async function getLinkedKeys(key) {
+  const r = await call(route`/rest/api/3/issue/${key}?fields=issuelinks`);
+  return (r?.fields?.issuelinks || []).map((l) => (l.inwardIssue || l.outwardIssue)?.key).filter(Boolean);
+}
+
 export async function getLinkTypes() {
   const r = await call(route`/rest/api/3/issueLinkType`);
   return r?.issueLinkTypes || [];

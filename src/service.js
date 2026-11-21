@@ -125,14 +125,28 @@ export async function linkRootCause({ incidentKey, changeKey, windowHours, proje
   if (!world.changes.some((c) => c.key === cKey)) {
     throw new UserError(`${cKey} is not a change record (label it "network-change" or use a Change issue type).`);
   }
+  const s = analysis.suspects.find((x) => x.key === cKey);
+  // Idempotent: a second confirmation (double click, or the agent asked twice) must not add a
+  // duplicate link and evidence comment.
+  if ((await jira.getLinkedKeys(iKey)).includes(cKey)) {
+    return {
+      linked: true,
+      alreadyLinked: true,
+      incident: iKey,
+      change: cKey,
+      score: s?.score ?? null,
+      confidence: s?.confidence ?? 'NOT_RANKED',
+      message: `${cKey} is already linked to ${iKey}. Nothing was changed.`,
+    };
+  }
   const types = await jira.getLinkTypes();
   const type = types.find((t) => /^relates$/i.test(t.name)) || types.find((t) => /relat/i.test(t.name)) || types[0];
   if (!type) throw new UserError('No issue link types are available on this site.');
   await jira.linkIssues(type.name, iKey, cKey);
   await jira.addComment(iKey, textToAdf(rcaComment(analysis, cKey)));
-  const s = analysis.suspects.find((x) => x.key === cKey);
   return {
     linked: true,
+    alreadyLinked: false,
     incident: iKey,
     change: cKey,
     linkType: type.name,

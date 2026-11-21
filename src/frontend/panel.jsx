@@ -5,6 +5,7 @@ import ForgeReconciler, {
   ModalBody, ModalFooter, xcss,
 } from '@forge/react';
 import { invoke } from '@forge/bridge';
+import { escalationText } from '../lib/format.js';
 
 const card = xcss({
   borderColor: 'color.border',
@@ -71,7 +72,7 @@ function Suspect({ s, rank, onConfirm, onOwner, owner, ownerLoading }) {
         )}
         {owner && (
           <SectionMessage appearance="information" title="Who to escalate to">
-            <Text>{owner.escalateTo.length ? owner.escalateTo.join(', ') : 'No owner or team found for this change.'}</Text>
+            <Text>{escalationText(owner)}</Text>
             {owner.teamworkGraph?.available && owner.teamworkGraph.recentComments.length > 0 && (
               <Text size="small">{`${owner.teamworkGraph.recentComments.length} comment(s) on this change in the last 7 days (Teamwork Graph).`}</Text>
             )}
@@ -113,7 +114,7 @@ function App() {
     const r = await invoke('linkCause', { changeKey: confirm.key, windowHours });
     setLinking(false);
     setConfirm(null);
-    setLinked(r.ok ? { ok: true, text: r.data.message } : { ok: false, text: r.error });
+    setLinked(r.ok ? { ok: true, already: r.data.alreadyLinked, text: r.data.message } : { ok: false, text: r.error });
   };
 
   const loadOwner = async (s) => {
@@ -168,7 +169,10 @@ function App() {
       </SectionMessage>
 
       {linked && (
-        <SectionMessage appearance={linked.ok ? 'success' : 'error'} title={linked.ok ? 'Root cause recorded' : 'Could not link'}>
+        <SectionMessage
+          appearance={!linked.ok ? 'error' : linked.already ? 'information' : 'success'}
+          title={!linked.ok ? 'Could not link' : linked.already ? 'Already recorded' : 'Root cause recorded'}
+        >
           <Text>{linked.text}</Text>
         </SectionMessage>
       )}

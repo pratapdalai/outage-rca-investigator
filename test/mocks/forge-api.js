@@ -49,7 +49,12 @@ async function requestJira(path, opts = {}) {
   }
   if (method === 'GET' && (m = /^\/rest\/api\/3\/issue\/([A-Z0-9_]+-\d+)/.exec(p))) {
     const i = state.issues.find((x) => x.key === m[1]);
-    return i ? resp(200, i) : resp(404, { errorMessages: ['Issue does not exist or you do not have permission to see it.'] });
+    if (!i) return resp(404, { errorMessages: ['Issue does not exist or you do not have permission to see it.'] });
+    // Jira reports each link from this issue's point of view: the *other* issue as inward/outward.
+    const issuelinks = state.links
+      .filter((l) => l.inwardIssue.key === i.key || l.outwardIssue.key === i.key)
+      .map((l) => (l.inwardIssue.key === i.key ? { type: l.type, outwardIssue: l.outwardIssue } : { type: l.type, inwardIssue: l.inwardIssue }));
+    return resp(200, { ...i, fields: { ...i.fields, issuelinks } });
   }
   return resp(500, { errorMessages: [`mock: unhandled ${method} ${p}`] });
 }

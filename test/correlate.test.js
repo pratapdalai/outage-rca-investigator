@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { demoScenario, pickIssueType } from '../src/lib/demo.js';
 import { normaliseIssue, rankSuspects, blastRadius, buildTimeline, rcaComment } from '../src/lib/correlate.js';
+import { escalationText } from '../src/lib/format.js';
 import { extractEntities, adfToText, textToAdf, parseLabelledTime, extractSection, CHANGE_TIME_LABELS } from '../src/lib/text.js';
 
 const NOW = Date.parse('2026-11-20T12:00:00Z');
@@ -53,6 +54,17 @@ test('entity extraction finds elements, versions, sites and skips issue keys', (
 test('control labels (outage, network-change, demo markers) are never matched as evidence', () => {
   const e = extractEntities('', { labels: ['outage', 'network-change', 'rca-demo', 'rca-demo-main', 'core-ring'] });
   assert.deepEqual(e.labels, ['CORE-RING']);
+});
+
+test('escalation text shows the implementer and at most three teams', () => {
+  const ten = Array.from({ length: 10 }, (_, i) => `Team ${i + 1}`);
+  assert.equal(
+    escalationText({ implementer: 'Ravi', teamworkGraph: { ownerTeams: ten } }),
+    'Implementer: Ravi · Teams: Team 1, Team 2, Team 3 and 7 more'
+  );
+  assert.equal(escalationText({ teamworkGraph: { ownerTeams: ['NOC East'] } }), 'Teams: NOC East');
+  assert.equal(escalationText({ implementer: 'Ravi', teamworkGraph: { ownerTeams: [] } }), 'Implementer: Ravi');
+  assert.equal(escalationText({ teamworkGraph: { available: false } }), 'No owner or team found for this change.');
 });
 
 test('labelled time and rollback section parsing', () => {
