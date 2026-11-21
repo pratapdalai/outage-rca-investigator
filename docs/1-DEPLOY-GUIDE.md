@@ -22,28 +22,20 @@ Commands work in **Windows PowerShell**, macOS Terminal or Linux. Run them one a
 
 ---
 
-## Step 1: Install Node.js 22
+## Step 1: Node.js
 
-1. Go to https://nodejs.org and download the **22.x LTS** installer. Install it with the default options.
-2. Open a **new** terminal and check:
-   ```
-   node -v
-   npm -v
-   ```
-   You should see `v22.x.x` and a version number for npm.
+The Forge CLI 15 needs Node **22.23.4 or later**, or **24.22.1 or later** (`node -v`). If your system Node is older and you don't want to change it, use a portable Node zip from nodejs.org, as this laptop does (`C:\Users\ommpr\tools\node-24` plus the `forge24.cmd` launcher).
 
-## Step 2: Install the Forge CLI
+## Step 2: The Forge CLI
 
-```
-npm install -g @forge/cli@latest
-forge --version
-```
-You should see a version number (15.x or later).
+The CLI is a devDependency of this project (`@forge/cli`), so `npm install` (Step 4) installs it and you run it with `npx forge ...`. No global install is needed.
+
+If downloads are very slow, add `--fetch-timeout=600000 --fetch-retries=6 --maxsockets=4` to `npm install`.
 
 ## Step 3: Create an API token and log in
 
-1. Open https://id.atlassian.com/manage/api-tokens and sign in with your **personal** Atlassian account.
-2. Click **Create API token**, name it `forge`, and copy the token. Don't share it or paste it anywhere else.
+1. Open https://id.atlassian.com/manage-profile/security/api-tokens and sign in with your **personal** Atlassian account.
+2. Click **Create API token with scopes**, name it `forge`, choose **Forge**, and copy the token. Paste it only into the terminal, never into a chat or document.
 3. In the terminal:
    ```
    forge login
@@ -59,7 +51,7 @@ You should see a version number (15.x or later).
    npm install
    npm test
    ```
-   `npm test` runs 11 unit tests and the full simulated-Jira test. You should see `pass 11` and `INTEGRATION: ALL PASSED`. One `JiraError: 404` line in the output is expected: it comes from a test that checks a missing issue is handled.
+   `npm test` runs 13 unit tests and the full simulated-Jira test. You should see `pass 13` and `INTEGRATION: ALL PASSED`. One `JiraError: 404` line in the output is expected: it comes from a test that checks a missing issue is handled.
 
 ## Step 5: Register the app (gives it your own ID)
 
@@ -91,21 +83,21 @@ Follow the prompts. Note the site URL it gives you (something like `yourname-dem
 ```
 forge install -e development --demo-site --product jira
 ```
-(If the demo-site flag isn't offered, use `forge install -e development --site <your-site>.atlassian.net --product jira`.)
+On this account, installing the demo site with `--site <url>` failed with an "unexpected error", while `--demo-site` worked. For a normal site, use `--site <your-site>.atlassian.net`.
 
 Approve the scopes when asked. The app reads Jira data and Teamwork Graph data and can write links and comments.
 
 ## Step 9: Test it end to end
 
-1. Open your site and create a project: **Projects → Create project → Scrum or Kanban (team-managed)**, key **NOC**.
-2. In the project sidebar, open **Outage RCA**. (If you don't see it, look under **Apps** in the project sidebar.)
-3. Click **Create demo telecom scenario**. You should see "Demo scenario created" and the overview table fills with 6 outages.
-4. Open the main outage ticket the message names. The **Outage root cause** panel should show:
+1. Open your site **in Jira**: the address must be `<site>.atlassian.net/jira/...`, not home.atlassian.com, whose "projects" are a different product. Create a space (Jira's name for a project): **Spaces → Create space → Software development → Kanban → Use template → Team-managed**, with name `NOC Operations` and key **NOC**. Skip the "add agents" step.
+2. In the space, click the **`+`** after the tabs, choose **Apps → Outage RCA**, then **Add to navigation**, and open the **Outage RCA** tab.
+3. Click **Create demo telecom scenario**. You should see "Demo scenario created" and the overview table fills with 6 outages. A second click reports "Demo scenario already exists" and creates nothing.
+4. Open the main outage ticket the message names. Under the title, click the **Outage RCA hexagon icon** to open the **Outage root cause** panel. It should show:
    - Verdict: *"... is the probable root cause (74/100)"*
-   - #1: Firmware upgrade OLT-BBSR-07 (HIGH), #2: Emergency DNS patch (LOW)
+   - #1: Firmware upgrade OLT-BBSR-07 (HIGH), #2: Emergency DNS patch (44, LOW)
 5. Click **Who owns this change?** The demo assigns the change records to you, so the app looks up your Atlassian Teams in Teamwork Graph. If you belong to no team, create one at **Teams** in the top bar (for example "Access Network Ops") and add yourself.
 6. Click **Confirm as root cause → Link and comment**. Check the comment and link on the ticket.
-7. Open **Rovo chat** (top bar), choose **Outage RCA Investigator**, open the main outage ticket and ask:
+7. On the main outage ticket, click **Ask Rovo** (top right), switch **Rovo ⌄** to **Outage RCA Investigator**, and ask:
    - "Which change caused this outage?"
    - "How many customers did that change affect?"
    - "Draft the RCA report for this outage"

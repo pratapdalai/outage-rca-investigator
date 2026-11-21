@@ -13,10 +13,8 @@ Telecom outage? A Rovo agent finds the network change that caused it, shows the 
 ## Category
 **Apps for Specialized Industries** (telecom network operations)
 
-## Bonus prizes
-- Best Agents (Rovo / assignable agents)
-- Best app with Atlassian MCP
-- Best apps with Teamwork Graph integration
+## Bonus prize
+- **Best Agents** (Rovo agent, skill and actions). This is the one bonus prize entered.
 
 ---
 
@@ -51,7 +49,15 @@ A project page shows every recent outage with its most likely cause, and a chart
 - **Teamwork Graph API**: curated queries (`atlassianUserInTeams`, `jiraWorkItemComments`) for owning teams and recent discussion on the suspect change, with operation names, ARIs, per-object scopes and graceful fallback when the graph is unavailable.
 - **Correlation engine** in plain JavaScript: entity extraction tuned for telecom (network element IDs, firmware versions, sites), TF-IDF text similarity, exponential time decay, blast-radius clustering, risk patterns and a coincidence guard. It is deterministic, explainable and costs nothing per call. **No Forge LLM is used.**
 - **Security**: every Jira and Teamwork Graph call runs `asUser`, so people only see data they already have access to. The write action needs explicit confirmation.
-- **Quality**: 11 unit tests plus an end-to-end test against a simulated Jira (seeding, analysis, Teamwork Graph up and down, bad inputs, linking, project overview). The manifest is validated against the Forge schema and `forge lint`.
+- **Quality**: 13 unit tests and an end-to-end test against a simulated Jira. The end-to-end test covers:
+  - demo seeding: repeat seeding, and search that lags behind
+  - analysis
+  - Teamwork Graph available and unavailable
+  - bad inputs
+  - linking, including repeat confirmation
+  - the project overview
+
+  `forge lint` passes. The app has been tested live on a Jira Cloud site with Rovo: the issue panel, project page, Teamwork Graph owner lookup, link and comment, and the Rovo agent with its RCA report all work.
 
 ### Challenges I ran into
 - **Teamwork Graph is in Preview.** Raw Cypher is no longer accepted, operation names must follow `[company]_[operation]`, every object type needs its own scope, and failures come back as HTTP 200 with an `errors` array. I built a small client that treats anything without data as a failure and never lets the graph block the main analysis.
@@ -88,24 +94,27 @@ Rovo agents are strongest when the tools give them hard, explainable facts. The 
 
 ## Testing instructions for judges (paste into the instructions field)
 
-1. Install the app using the installation link above (Jira; approve the scopes).
-2. Open any Jira project (a new team-managed Scrum/Kanban project works). In the project sidebar open **Outage RCA**.
-3. Click **Create demo telecom scenario**. It creates 6 change records (label `network-change`) and 6 outage tickets (label `outage`) using the project's existing issue types, with timestamps relative to now. The change records are assigned to you.
-4. Open the main outage ticket named in the green message ("FTTH broadband down for customers in Patia"). The **Outage root cause** panel shows the verdict and ranked suspects. If the panel is collapsed, open it from the issue's **Apps** button.
-5. Try **Who owns this change?** (owning teams from Teamwork Graph; you'll see teams if your account belongs to an Atlassian Team), then **Confirm as root cause → Link and comment**.
-6. Try the lookback window selector (24h / 72h / 7d) and open the second outage tickets to see different results (for example the Cuttack DNS outage is attributed to the DNS patch).
-7. **Rovo agent** (sites with Rovo): open Rovo chat → **Outage RCA Investigator** → ask "Which change caused this outage?", "How many customers did that change affect?", "Who owns it and how do we roll it back?", "Draft the RCA report".
-8. **MCP** (optional): in Atlassian Administration → Apps → Sites → your site → Connected apps → Outage RCA Investigator, enable MCP exposure, then connect an MCP client to `https://mcp.atlassian.com/forge/<appId>`.
+About 5 minutes. You need to be a site admin to install.
+
+1. **Install:** open the installation link above, choose your site, pick **Jira**, and approve the permissions.
+2. **Create a space** (Jira calls projects "spaces"): **Spaces → Create space → Software development → Kanban → Use template → Team-managed**. Use name `NOC Operations` and key `NOC`. Any existing team-managed space also works.
+3. **Open the app page:** in the space, click the **`+`** at the end of the tabs (Summary, Board, …). Under **Apps**, choose **Outage RCA**, then **Add to navigation**. An **Outage RCA** tab appears.
+4. Click **Create demo telecom scenario**. It creates 6 change records (label `network-change`) and 6 outage tickets (label `outage`), with times relative to now, and assigns the changes to you. If a demo already exists on the site, the app points to it instead of creating duplicates. The table and chart show each outage's most likely cause.
+5. **Open the main outage** named in the message, "FTTH broadband down for customers in Patia". Under the ticket title, click the **Outage RCA hexagon icon** to open the **Outage root cause** panel. Expected result: **probable root cause, firmware upgrade on OLT-BBSR-07, 74/100, high confidence**, ahead of a more recent emergency DNS patch (44, low).
+6. Click **Who owns this change?** It shows the implementer's teams from Teamwork Graph, if your account belongs to any Atlassian Teams. Then click **Confirm as root cause → Link and comment** and check the new link and comment on the ticket. Confirming again changes nothing.
+7. Try the lookback selector (24h / 72h / 7d), and open other outages. For example, the Cuttack DNS outage is attributed to the DNS patch, and the single-customer router ticket gets no confident suspect.
+8. **Rovo agent** (sites with Rovo): on the main outage, click **Ask Rovo**, switch the agent from **Rovo ⌄** to **Outage RCA Investigator**, and try the conversation starters: "Which change caused this outage?", "How many customers did this change affect?", "Who owns the suspect change and how do we roll it back?", "Draft the RCA report for this outage".
 
 To use the app on your own data: label outage tickets `outage` (or use the Incident type) and change records `network-change` (or the Change type). Put `Implemented: <ISO time>` in change descriptions and `Detected: <ISO time>` in outage descriptions for exact timing; otherwise Jira dates are used. Optional lines such as `Network element: OLT-01`, `Site: EXCH-2` and `Customers affected: 120` improve matching and impact numbers.
 
 ## Explanation of how it meets the main technology requirement (paste)
 The app is built entirely on Atlassian Forge (`manifest.yml` with Forge modules, Node.js 22 runtime, UI Kit). It integrates with Jira / Jira Service Management (issue panel, project page, JQL search, issue links and comments through the Jira REST API), Rovo (`rovo:agent`, five `action` modules, a `rovo:skill`), Atlassian MCP (`rovo:mcp` exposing four tools) and the Teamwork Graph API (curated queries `atlassianUserInTeams` and `jiraWorkItemComments` through `requestTeamworkGraph`, with per-object `read:graph:*` scopes).
 
-## Bonus prize write-ups
+## Bonus prize write-up: Best Agents
 
-**Best Agents:** The Outage RCA Investigator agent (`rovo:agent`) uses five actions and the `telecom-rca-playbook` skill. Its four GET actions are reusable tools other agents can call; the skill packages the full RCA method (when to call each tool, how to read scores, edge cases, safety rules). The agent explains evidence instead of guessing, refuses to call LOW-confidence suspects the cause, and only links a root cause after explicit user confirmation.
+The **Outage RCA Investigator** agent (`rovo:agent`) does the hard part with facts, not guesses.
 
-**Best app with Atlassian MCP:** `rovo:mcp` exposes `find-root-cause-changes`, `get-outage-blast-radius`, `get-change-context` and `build-outage-timeline`. A NOC engineer can ask any MCP client (for example Claude) "what caused NOC-7?" and get the same evidence-backed ranking, with that user's own permissions. The skill's SKILL.md also works as an open playbook for third-party agents.
-
-**Best Teamwork Graph integration:** For the suspect change, the app reads the implementer's teams (`atlassianUserInTeams`) and recent discussion on the change (`jiraWorkItemComments`) from Teamwork Graph, so the engineer knows which team to escalate to and whether the change is already being discussed. It handles Preview-specific behaviour: operation naming, ARIs, per-object scopes, errors inside HTTP 200, retries, and graceful fallback to Jira data.
+- **Five actions.** Four GET actions find the root cause, size the blast radius, find the owner and rollback plan, and build the timeline. One UPDATE action links the confirmed cause. Asked "which change caused this outage?", the agent calls the ranking action with the ticket it is opened on and explains the evidence. Asked for an RCA report, it combines the timeline, blast radius, owner and rollback tools into a structured report, using only facts the tools returned.
+- **A reusable skill.** `telecom-rca-playbook` (`rovo:skill`) packages the whole RCA method: when to call each tool, how to read the scores, edge cases and safety rules. Any other agent can adopt the same method with the same tools, and the same four tools are also exposed through `rovo:mcp`.
+- **Guardrails.** The agent never calls a LOW-confidence suspect the cause and never recommends an unconfirmed rollback. The only write action runs after the engineer explicitly confirms, and it is idempotent, so confirming twice changes nothing. Every call runs as the user, so the agent only sees what the engineer can see.
+- **Teamwork Graph.** The agent names the owning teams of the change implementer, read from Teamwork Graph.

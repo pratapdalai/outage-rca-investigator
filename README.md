@@ -62,12 +62,13 @@ Scoring details: [`skills/telecom-rca-playbook/references/scoring.md`](skills/te
 
 ## Try it in 3 minutes (judges)
 
-1. Install the app with the installation link from the Devpost submission.
-2. Open any Jira project (a new team-managed project is fine). In the project sidebar, open **Outage RCA**.
-3. Click **Create demo telecom scenario**. It creates 6 change records and 6 outage tickets.
-4. Open the ticket named in the green message (*"FTTH broadband down for customers in Patia"*). The **Outage root cause** panel shows the verdict and ranked suspects. If the panel is collapsed, open it from the issue's **Apps** button.
-5. Click **Who owns this change?**, then **Confirm as root cause**. The link and evidence comment appear on the ticket.
-6. **Rovo** (if enabled on your site): open Rovo chat, pick the **Outage RCA Investigator** agent and ask *"Which change caused this outage?"*, then *"Draft the RCA report"*.
+1. Install the app with the installation link from the Devpost submission. You need to be a site admin.
+2. In Jira, create a team-managed Kanban space (Jira's new name for a project), for example `NOC Operations` with key `NOC`, or open any existing one.
+3. In the space, click the **`+`** after the tabs, choose **Apps → Outage RCA**, then **Add to navigation**, and open the **Outage RCA** tab.
+4. Click **Create demo telecom scenario**. It creates 6 change records and 6 outage tickets, or points to the existing demo if one is already there.
+5. Open the ticket named in the message (*"FTTH broadband down for customers in Patia"*). Under the ticket title, click the **Outage RCA hexagon icon** to open the **Outage root cause** panel, which shows the verdict and ranked suspects.
+6. Click **Who owns this change?**, then **Confirm as root cause**. The link and evidence comment appear on the ticket.
+7. **Rovo** (if enabled on your site): click **Ask Rovo**, switch the agent to **Outage RCA Investigator**, and ask *"Which change caused this outage?"*, then *"Draft the RCA report for this outage"*.
 
 Without Rovo, the panel and project page work fully; only the chat agent needs Rovo.
 
@@ -76,8 +77,9 @@ Without Rovo, the panel and project page work fully; only the chat agent needs R
 ```bash
 npm install
 npm test            # unit tests for the engine + end-to-end test against a simulated Jira
-forge lint
-forge deploy && forge install
+npx forge lint      # Forge CLI 15 is a devDependency (needs Node ^22.23.4 or ^24.22.1)
+npx forge deploy -e development
+npx forge install -e development --site <your-site>.atlassian.net --product jira
 ```
 
 Project layout:
