@@ -85,7 +85,7 @@ Rovo agents are strongest when the tools give them hard, explainable facts. The 
 
 ## "Try it out" links
 - Source code: https://github.com/pratapdalai/outage-rca-investigator
-- Demo video: `<YouTube link>`
+- Demo video: https://youtu.be/QJj-IWuww-I
 
 ---
 
