@@ -84,7 +84,7 @@ Rovo agents are strongest when the tools give them hard, explainable facts. The 
 `forge` `atlassian-forge` `rovo` `rovo-agent` `rovo-skill` `mcp` `teamwork-graph` `jira` `jira-service-management` `ui-kit` `javascript` `node.js` `react`
 
 ## "Try it out" links
-- Source code: `<https://github.com/you/outage-rca-investigator>`
+- Source code: https://github.com/pratapdalai/outage-rca-investigator
 - Demo video: `<YouTube link>`
 
 ---
